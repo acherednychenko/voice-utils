@@ -1,74 +1,116 @@
-# OpenAI Realtime Transcription
+# Voice Module
 
-A tool for real-time audio transcription using OpenAI's Realtime API.
+A Python module for real-time speech transcription and voice command handling using OpenAI's API.
 
 ## Features
 
-- **Real-time Transcription**: Stream audio directly from your microphone to OpenAI's API
-- **Keyboard Shortcuts**: Control recording with customizable keyboard shortcuts
-- **Keystroke Simulation**: Type transcribed text into any application
-- **Statistics Tracking**: Track transcription stats and session history
-- **Logging**: Logs transcriptions and session details to files
+- Real-time audio transcription using OpenAI's API
+- Voice command recognition and processing
+- Keyboard shortcut control for starting/stopping recording
+- Support for both toggle mode and hold-to-record mode
+- Automatic keystroke simulation (type transcribed text into active window)
+- Audio recording and visualization
 
-## Quick Start
+## Installation
 
-1. **Copy the entire folder** to any computer with Python installed
-2. **Install dependencies:**
-   ```
-   pip install -r requirements.txt
-   ```
-3. **Create a `.env` file** with your OpenAI API key:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
-4. **Run the application:**
-   ```
-   python realtime_transcription.py
-   ```
+### Prerequisites
 
-## Keyboard Controls
+- Python 3.12 or higher
+- An OpenAI API key with access to the Realtime API
 
-By default:
-- **Command+Shift+.** (period): Start/stop recording
-- **Control+Shift+Q**: Exit the application
+### From GitHub
 
-## Command Line Options
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/voice-module.git
 
-```
-python realtime_transcription.py [OPTIONS]
+# Navigate to the directory
+cd voice-module
+
+# Install with uv
+uv pip install -e .
 ```
 
-Options:
-- `--no-keystroke`: Disable keystroke simulation (won't type text into applications)
-- `--debug`: Enable debug logging
-- `--start-stop-keys KEY1+KEY2+...`: Customize the recording shortcut
-- `--exit-keys KEY1+KEY2+...`: Customize the exit shortcut
+### As a Dependency
 
-Example:
+Add to your project's requirements:
+
 ```
-python realtime_transcription.py --start-stop-keys=ctrl+alt+r --exit-keys=ctrl+alt+q
+git+https://github.com/yourusername/voice-module.git
 ```
 
-## Mac Accessibility Permissions
+Or in pyproject.toml:
 
-For keystroke simulation to work on macOS, you need to:
+```toml
+dependencies = [
+    "voice-module @ git+https://github.com/yourusername/voice-module.git"
+]
+```
 
-1. Go to System Settings > Privacy & Security > Accessibility
-2. Add your terminal application to the list
-3. Enable the checkbox next to it
+## Usage
 
-## Logs and Statistics
+### Environment Setup
 
-The application stores logs and statistics in:
-- Transcription logs: `data/transcription_logs/transcription_log.txt`
-- Statistics: `data/transcription_logs/statistics.json`
+Create a `.env` file with your OpenAI API key:
 
-## Troubleshooting
+```
+OPENAI_API_KEY=your_api_key_here
+```
 
-- **Keystroke simulation doesn't work**: Check accessibility permissions on macOS
-- **Audio recording fails**: Verify your microphone settings
-- **Connection errors**: Check your API key and internet connection
+### Voice App (Hold-to-Record)
+
+The voice app allows you to record audio by holding down a keyboard shortcut:
+
+```bash
+# Run the voice app
+python -m voice
+```
+
+### Realtime Transcription (Toggle Mode)
+
+The realtime transcription app uses toggle mode (press once to start, press again to stop):
+
+```bash
+# Run the realtime transcription app
+python -m realtime
+```
+
+### Command Line Options
+
+Both apps support various command line options:
+
+```bash
+# Voice App with custom shortcut
+python -m voice --shortcut="alt+shift+v"
+
+# Realtime Transcription with debug logging
+python -m realtime --debug
+
+# Disable keystroke simulation
+python -m realtime --no-keystroke
+
+# Use hold mode instead of toggle
+python -m realtime --hold-mode
+```
+
+## Development
+
+### Testing
+
+Run tests using pytest:
+
+```bash
+pytest
+```
+
+### Building
+
+Build the package using hatch:
+
+```bash
+hatch build
+```
 
 ## License
 
-For demonstration purposes only. 
+[MIT License](LICENSE) 
