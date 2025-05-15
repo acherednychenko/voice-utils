@@ -190,6 +190,7 @@ def on_message(ws, message):
                     "input_audio_transcription": {
                         "model": "gpt-4o-mini-transcribe",
                         "language": "en",
+                        "prompt": "Always transcribe in English. I am technical person, software engineer. So I can use a lot of technical terms. "
                     },
                     "input_audio_noise_reduction": {
                         "type": "near_field"

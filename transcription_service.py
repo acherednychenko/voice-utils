@@ -59,7 +59,7 @@ class TranscriptionService:
             raise FileNotFoundError(f"Audio file not found: {file_path}")
         
         self.logger.debug(f"Transcribing file: {file_path} (stream={stream})")
-        
+        prompt_formatted = f"Text is in {self.language}, use only this (these) language (s). I am technical person, software engineer. So I can use a lot of technical terms."
         # Open the file for transcription
         with open(file_path, "rb") as audio_file:
             if stream:
@@ -69,7 +69,7 @@ class TranscriptionService:
                     model=self.model,
                     file=audio_file,
                     response_format="text",
-                    prompt=f"Text is {self.language}",
+                    prompt=prompt_formatted,
                     stream=True,
                 )
                 
@@ -82,7 +82,7 @@ class TranscriptionService:
                     model=self.model,
                     file=audio_file,
                     response_format="text",
-                    prompt=f"Text is {self.language}",
+                    prompt=prompt_formatted,
                 )
                 
                 self.logger.debug(f"Transcription complete: {len(transcription.text)} characters")
