@@ -1,0 +1,4 @@
+.env
+**/.env
+data/conversations/transcripts/*
+data/transcription_logs/*
