@@ -59,7 +59,8 @@ class TranscriptionService:
             raise FileNotFoundError(f"Audio file not found: {file_path}")
         
         self.logger.debug(f"Transcribing file: {file_path} (stream={stream})")
-        prompt_formatted = f"Text is in {self.language}, use only this (these) language (s). I am technical person, software engineer. So I can use a lot of technical terms."
+        prompt_formatted = f"Context, which you don't need to mention in the output, but attend to it: Text is in {self.language}, use only this (these) language (s). Context about speaker - technical person, software engineer, So I can use a lot of technical terms."
+        
         # Open the file for transcription
         with open(file_path, "rb") as audio_file:
             if stream:

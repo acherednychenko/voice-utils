@@ -2,6 +2,7 @@ import os
 import argparse
 import threading
 import logging
+import dotenv
 import pyperclip
 import time
 import sys
@@ -28,7 +29,8 @@ class VoiceTranscriptionApp:
         """
         # Parse command-line arguments first
         self.args = self._parse_arguments()
-        
+        assert dotenv.load_dotenv(".env", override=True)
+
         # Override log level if specified in args
         if hasattr(self.args, 'log_level'):
             level_name = self.args.log_level.upper()
