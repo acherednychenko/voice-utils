@@ -49,6 +49,9 @@ LOG_FILE = DATA_DIR / "transcription_log.txt"
 # Ensure directories exist
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+# model_name = "gpt-4o-mini-transcribe"
+model_name = "gpt-4o-transcribe"
+
 # Global statistics
 stats = {"total_sessions": 0, "total_recording_time": 0, "total_characters_transcribed": 0, "sessions": []}
 
@@ -233,7 +236,7 @@ def on_message(ws, message):
                         "type": "transcription_session.update",
                         "session": {
                             "input_audio_transcription": {
-                                "model": "gpt-4o-mini-transcribe",
+                                "model": model_name,
                                 "language": "en",
                                 "prompt": "Context, which you never need to mention in the output, but attend to it: Always transcribe in English. Context about speaker - technical person, software engineer, So I can use a lot of technical terms. ",
                             },
