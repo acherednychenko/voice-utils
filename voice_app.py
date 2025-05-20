@@ -6,6 +6,7 @@ import dotenv
 import pyperclip
 import time
 import sys
+from pynput.keyboard import Controller as KeyboardTyper
 
 # Revert to using the original input handler implementation
 from audio_recorder import AudioRecorder
@@ -13,6 +14,7 @@ from audio_processor import AudioProcessor
 from input_handler import InputCommand, KeyboardShortcutHandler
 from transcription_service import TranscriptionService
 from utils import RecordingAnimator, TranscriptionVisualizer
+from keyboard_controller import RecordingMode
 
 
 class VoiceTranscriptionApp:
@@ -66,12 +68,16 @@ class VoiceTranscriptionApp:
         # Visualization components
         self.recording_animator = RecordingAnimator()
         self.transcription_visualizer = TranscriptionVisualizer()
+
+        # Initialize keyboard typer if needed
+        self.keyboard_typer = KeyboardTyper() if self.args.simulate_typing else None
         
-        # Set up keyboard shortcut handler
+        # Set up keyboard shortcut handler with toggle mode if requested
         self.logger.info(f"Using keyboard shortcut input handler: {self.args.shortcut}")
         self.input_handler = KeyboardShortcutHandler(
             record_shortcut=self.args.shortcut, 
-            exit_shortcut=self.args.exit_shortcut
+            exit_shortcut=self.args.exit_shortcut,
+            toggle_mode=not self.args.hold_mode
         )
         
         # Register command callbacks
@@ -99,6 +105,11 @@ class VoiceTranscriptionApp:
             default="ctrl+shift+q",
             help="Keyboard shortcut to exit the program",
         )
+        parser.add_argument(
+            "--hold-mode",
+            action="store_true",
+            help="Use hold mode: press and hold to record, release to stop (default is toggle mode: press to start, press again to stop)",
+        )
         
         # Audio file handling
         parser.add_argument(
@@ -123,13 +134,18 @@ class VoiceTranscriptionApp:
         parser.add_argument(
             "--language",
             type=str,
-            default="en,ua",
+            default="en",
             help="Language hint for transcription (e.g., 'en', 'ua')",
         )
         parser.add_argument(
             "--no-clipboard",
             action="store_true",
-            help="Disable automatic copying of transcriptions to clipboard",
+            help="Disable automatic copying of transcriptions to clipboard (copying is enabled by default)",
+        )
+        parser.add_argument(
+            "--no-type",
+            action="store_true",
+            help="Disable simulating keyboard typing of transcribed text (typing is enabled by default)",
         )
         
         # Logging options
@@ -141,7 +157,12 @@ class VoiceTranscriptionApp:
             help="Set logging level",
         )
         
-        return parser.parse_args()
+        args = parser.parse_args()
+        
+        # Set simulate_typing based on the absence of no-type flag
+        args.simulate_typing = not args.no_type
+
+        return args
     
     def run(self):
         """Run the application"""
@@ -155,7 +176,9 @@ class VoiceTranscriptionApp:
         print(f"Voice Transcription App")
         print(f"Audio will be saved in {self.args.save_format.upper()} format")
         print(f"Using keyboard shortcut: {self.args.shortcut}")
+        print(f"Mode: {'Hold mode (press and hold to record)' if self.args.hold_mode else 'Toggle mode (press to start/stop)'}")
         print(f"Clipboard copying: {'Disabled' if self.args.no_clipboard else 'Enabled'}")
+        print(f"Keyboard typing simulation: {'Enabled' if self.args.simulate_typing else 'Disabled'}")
         print()
         
         # Start the input handler
@@ -213,6 +236,24 @@ class VoiceTranscriptionApp:
         print("Exiting...")
         self.exit_requested.set()
     
+    def _type_text(self, text):
+        """Simulate keystrokes to type the transcribed text"""
+        if not self.args.simulate_typing or not self.keyboard_typer:
+            return
+            
+        for char in text:
+            self.keyboard_typer.type(char)
+            time.sleep(0.01)  # Small delay between characters
+    
+    def _process_token(self, token):
+        """Process a token from the transcription stream"""
+        # Display token in console
+        self.transcription_visualizer.process_token(token)
+        
+        # Type the token if typing simulation is enabled
+        if self.args.simulate_typing:
+            self._type_text(token)
+    
     def _process_audio_data(self, audio_data):
         """Process recorded audio data"""
         # Save the audio file
@@ -233,7 +274,8 @@ class VoiceTranscriptionApp:
         transcription = self.transcription_service.transcribe_and_print(
             file_path, 
             stream=True,
-            visualizer=self.transcription_visualizer
+            visualizer=self.transcription_visualizer,
+            token_callback=self._process_token if self.args.simulate_typing else None
         )
         
         # Finalize the transcription
@@ -270,7 +312,8 @@ class VoiceTranscriptionApp:
         transcription = self.transcription_service.transcribe_and_print(
             file_path, 
             stream=True,
-            visualizer=self.transcription_visualizer
+            visualizer=self.transcription_visualizer,
+            token_callback=self._process_token if self.args.simulate_typing else None
         )
         
         # Finalize the transcription

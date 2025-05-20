@@ -132,7 +132,7 @@ class KeyboardShortcutHandler(InputHandler):
         keyboard.Key.cmd: [keyboard.Key.cmd, keyboard.Key.cmd_l, keyboard.Key.cmd_r],
     }
     
-    def __init__(self, record_shortcut="cmd+shift+.", exit_shortcut="ctrl+shift+q"):
+    def __init__(self, record_shortcut="cmd+shift+.", exit_shortcut="ctrl+shift+q", toggle_mode=False):
         super().__init__()
         self.record_shortcut_str = record_shortcut
         self.exit_shortcut_str = exit_shortcut
@@ -143,6 +143,11 @@ class KeyboardShortcutHandler(InputHandler):
         self.exit_requested = threading.Event()
         self.is_recording = False
         self.listener = None
+        self.toggle_mode = toggle_mode
+        
+        # For toggle mode
+        self.last_shortcut_time = 0
+        self.shortcut_cooldown = 0.5  # seconds
         
         # Setup logger
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -246,15 +251,35 @@ class KeyboardShortcutHandler(InputHandler):
                 return False  # Stop listener
                 
             # Check if all required keys are pressed for recording
-            if self._is_combination_pressed(self.record_keys) and not self.is_recording:
-                # Use DEBUG level instead of INFO to avoid console output
-                self.logger.debug(f"Record shortcut detected: {self.record_shortcut_str}")
-                self.is_recording = True
-                self._trigger_command(InputCommand.START_RECORDING)
+            if self._is_combination_pressed(self.record_keys):
+                # In toggle mode, handle start/stop toggling on key press
+                if self.toggle_mode:
+                    # Add cooldown to prevent multiple triggers
+                    current_time = time.time()
+                    if current_time - self.last_shortcut_time > self.shortcut_cooldown:
+                        self.last_shortcut_time = current_time
+                        
+                        if not self.is_recording:
+                            # Start recording if not already recording
+                            self.logger.debug(f"Start recording (toggle mode)")
+                            self.is_recording = True
+                            self._trigger_command(InputCommand.START_RECORDING)
+                        else:
+                            # Stop recording if already recording
+                            self.logger.debug(f"Stop recording (toggle mode)")
+                            self.is_recording = False
+                            self._trigger_command(InputCommand.STOP_RECORDING)
+                # In hold mode (default), start recording on key press if not recording
+                elif not self.is_recording:
+                    self.logger.debug(f"Record shortcut detected: {self.record_shortcut_str}")
+                    self.is_recording = True
+                    self._trigger_command(InputCommand.START_RECORDING)
                 
         except Exception as e:
             # Keep error messages at ERROR level
             self.logger.error(f"Error in key press handler: {e}", exc_info=True)
+        
+        return True  # Continue listening
     
     def _on_key_release(self, key):
         """Handler for key release events"""
@@ -272,8 +297,9 @@ class KeyboardShortcutHandler(InputHandler):
             # Use DEBUG level so it won't appear in console with default settings
             self.logger.debug(f"Key released: {key_val}, remaining pressed keys: {self.pressed_keys}")
             
-            # If we're currently recording and this was one of the shortcut keys, stop recording
-            if self.is_recording:
+            # Only process key release events if we're in hold mode (not toggle mode)
+            # and we're currently recording
+            if not self.toggle_mode and self.is_recording:
                 # Handle period key specially
                 if key_val == "." or key_val == keyboard.KeyCode.from_char('.'):
                     if "." in self.record_keys:
@@ -296,6 +322,8 @@ class KeyboardShortcutHandler(InputHandler):
         except Exception as e:
             # Keep error messages at ERROR level
             self.logger.error(f"Error in key release handler: {e}", exc_info=True)
+        
+        return True  # Continue listening
     
     def start(self):
         """Start keyboard listener"""
@@ -304,7 +332,10 @@ class KeyboardShortcutHandler(InputHandler):
         self.is_recording = False
         
         print(f"Shortcut mode activated.")
-        print(f"Hold down {self.record_shortcut_str} to record audio, release to transcribe.")
+        if self.toggle_mode:
+            print(f"Press {self.record_shortcut_str} to start recording, press again to stop.")
+        else:
+            print(f"Hold down {self.record_shortcut_str} to record audio, release to transcribe.")
         print(f"Press {self.exit_shortcut_str} to exit.")
         print("Waiting for keyboard commands...")
         print()
@@ -312,6 +343,7 @@ class KeyboardShortcutHandler(InputHandler):
         # Log the key combinations we're looking for at DEBUG level
         self.logger.debug(f"Watching for record shortcut: {self.record_shortcut_str}")
         self.logger.debug(f"Watching for exit shortcut: {self.exit_shortcut_str}")
+        self.logger.debug(f"Toggle mode: {self.toggle_mode}")
         
         # Start keyboard listener
         self.listener = keyboard.Listener(

@@ -111,7 +111,7 @@ class TranscriptionService:
         self.logger.debug(f"Collected {chunks_count} chunks, total length: {len(full_text)} characters")
         return full_text
     
-    def transcribe_and_print(self, file_path, stream=True, visualizer=None):
+    def transcribe_and_print(self, file_path, stream=True, visualizer=None, token_callback=None):
         """
         Transcribe audio and print results in real-time if streaming
         
@@ -119,6 +119,7 @@ class TranscriptionService:
             file_path: Path to the audio file
             stream: Whether to stream results
             visualizer: Optional TranscriptionVisualizer to handle token presentation
+            token_callback: Optional callback to process each token (e.g. for keyboard simulation)
             
         Returns:
             Transcription text
@@ -135,7 +136,12 @@ class TranscriptionService:
             if visualizer:
                 for event in transcription:
                     if event.type == "transcript.text.delta":
-                        visualizer.process_token(event.delta)
+                        if token_callback:
+                            # Use the token callback with priority
+                            token_callback(event.delta)
+                        else:
+                            # Otherwise, use the visualizer
+                            visualizer.process_token(event.delta)
                         full_text += event.delta
                         chunks_count += 1
                 
@@ -147,6 +153,9 @@ class TranscriptionService:
                 for event in transcription:
                     if event.type == "transcript.text.delta":
                         print(event.delta, end="", flush=True)
+                        # Call token_callback if provided
+                        if token_callback:
+                            token_callback(event.delta)
                         full_text += event.delta
                         chunks_count += 1
                 
