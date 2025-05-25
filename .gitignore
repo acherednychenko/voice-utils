@@ -22,3 +22,4 @@ yarn.lock
 data/*
 __pycache__
 .cursor/*
+*_temporal.log
