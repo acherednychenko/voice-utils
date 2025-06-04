@@ -66,28 +66,20 @@ class TranscriptionService:
             if stream:
                 # Stream the transcription results
                 self.logger.debug(f"Starting streaming transcription with model {self.model}")
-                transcription = self.client.audio.transcriptions.create(
-                    model=self.model,
-                    file=audio_file,
-                    response_format="text",
-                    prompt=prompt_formatted,
-                    stream=True,
-                )
-                
-                # Return the generator directly
-                return transcription
             else:
                 # Get the full transcription at once
                 self.logger.debug(f"Starting non-streaming transcription with model {self.model}")
-                transcription = self.client.audio.transcriptions.create(
-                    model=self.model,
-                    file=audio_file,
-                    response_format="text",
-                    prompt=prompt_formatted,
-                )
-                
-                self.logger.debug(f"Transcription complete: {len(transcription.text)} characters")
-                return transcription.text
+
+            transcription = self.client.audio.transcriptions.create(
+                model=self.model,
+                file=audio_file,
+                response_format="text",
+                prompt=prompt_formatted,
+                stream=stream,
+            )
+            
+            # self.logger.debug(f"Transcription complete: {len(transcription.text)} characters")
+            return transcription
     
     def collect_stream_to_text(self, transcription_stream):
         """
@@ -131,6 +123,8 @@ class TranscriptionService:
             
             transcription = self.transcribe_file(file_path, stream=True)
             chunks_count = 0
+            events_count = 0
+            other_events = []
             
             # If we have a visualizer, use that, otherwise print directly
             if visualizer:
@@ -144,8 +138,13 @@ class TranscriptionService:
                             visualizer.process_token(event.delta)
                         full_text += event.delta
                         chunks_count += 1
-                
-                self.logger.debug(f"Processed {chunks_count} streaming chunks through visualizer")
+                    else:
+                        other_events.append(event)
+                    events_count += 1
+
+                self.logger.debug(f"Processed {chunks_count} streaming chunks through visualizer, total count of items in transcription: {events_count}")
+                if other_events:
+                    self.logger.debug(f"Other events: {other_events}")
             else:
                 # Start with a fresh line to avoid conflicts with animation
                 print()
@@ -158,11 +157,14 @@ class TranscriptionService:
                             token_callback(event.delta)
                         full_text += event.delta
                         chunks_count += 1
-                
-                self.logger.debug(f"Printed {chunks_count} streaming chunks directly")
+                    events_count += 1
+                self.logger.debug(f"Printed {chunks_count} streaming chunks directly, total count of items in transcription: {events_count}")
             
             return full_text
         else:
             text = self.transcribe_file(file_path, stream=False)
+            text = text.strip("\n")
             # Don't print here - let the caller handle it
+            if token_callback:
+                token_callback(text)
             return text 

@@ -62,6 +62,7 @@ class VoiceTranscriptionApp:
         self.recorder = AudioRecorder()
         self.transcription_service = TranscriptionService(
             language=self.args.language,
+            model=self.args.model,
             log_level=log_level
         )
         
@@ -106,6 +107,12 @@ class VoiceTranscriptionApp:
             help="Keyboard shortcut to exit the program",
         )
         parser.add_argument(
+            "--model",
+            type=str,
+            default="gpt-4o-mini-transcribe",
+            help="Model to use for transcription",
+        )
+        parser.add_argument(
             "--hold-mode",
             action="store_true",
             help="Use hold mode: press and hold to record, release to stop (default is toggle mode: press to start, press again to stop)",
@@ -146,6 +153,12 @@ class VoiceTranscriptionApp:
             "--no-type",
             action="store_true",
             help="Disable simulating keyboard typing of transcribed text (typing is enabled by default)",
+        )
+        parser.add_argument(
+            "--streaming",
+            type=bool,
+            default=False,
+            help="Enable streaming of transcription (disabled by default)",
         )
         
         # Logging options
@@ -243,7 +256,7 @@ class VoiceTranscriptionApp:
             
         for char in text:
             self.keyboard_typer.type(char)
-            time.sleep(0.01)  # Small delay between characters
+            time.sleep(0.001)  # Small delay between characters
     
     def _process_token(self, token):
         """Process a token from the transcription stream"""
@@ -270,10 +283,10 @@ class VoiceTranscriptionApp:
         self.transcription_visualizer.start_transcribing()
         
         # Transcribe the audio using the unified visualizer
-        self.logger.debug(f"Transcribing audio file with streaming: {file_path}")
+        self.logger.debug(f"Transcribing audio file with streaming:{self.args.streaming}: {file_path}")
         transcription = self.transcription_service.transcribe_and_print(
             file_path, 
-            stream=True,
+            stream=self.args.streaming,
             visualizer=self.transcription_visualizer,
             token_callback=self._process_token if self.args.simulate_typing else None
         )
@@ -308,10 +321,10 @@ class VoiceTranscriptionApp:
         self.transcription_visualizer.start_transcribing()
         
         # Transcribe the audio using the unified visualizer
-        self.logger.debug(f"Transcribing audio file with streaming: {file_path}")
+        self.logger.debug(f"Transcribing audio file with streaming:{self.args.streaming}: {file_path}")
         transcription = self.transcription_service.transcribe_and_print(
             file_path, 
-            stream=True,
+            stream=self.args.streaming,
             visualizer=self.transcription_visualizer,
             token_callback=self._process_token if self.args.simulate_typing else None
         )
