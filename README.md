@@ -1,4 +1,4 @@
-# Voice Module
+# Voice Transcription Module
 
 A Python module for real-time speech transcription and voice command handling using OpenAI's API.
 
@@ -7,6 +7,8 @@ A Python module for real-time speech transcription and voice command handling us
 - Real-time audio transcription using OpenAI's API
 - Voice command recognition and processing
 - Keyboard shortcut control for starting/stopping recording
+- **Cancel shortcut** for canceling recordings without processing
+- **Timing controls** - minimum recording duration and cooldown periods
 - Support for both toggle mode and hold-to-record mode
 - Automatic keystroke simulation (type transcribed text into active window)
 - Audio recording and visualization
@@ -16,99 +18,136 @@ A Python module for real-time speech transcription and voice command handling us
 ### Prerequisites
 
 - Python 3.12 or higher
-- An OpenAI API key with access to the Realtime API
+- [uv](https://github.com/astral-sh/uv) package manager
+- An OpenAI API key with access to the API
 
-### From GitHub
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/voice-module.git
+git clone <repository-url>
 
-# Navigate to the directory
-cd voice-module
 
-# Install with uv
+# Install with all dependencies
 uv pip install -e .
 ```
 
-### As a Dependency
+### Alternative: Direct installation
 
-Add to your project's requirements:
-
-```
-git+https://github.com/yourusername/voice-module.git
-```
-
-Or in pyproject.toml:
-
-```toml
-dependencies = [
-    "voice-module @ git+https://github.com/yourusername/voice-module.git"
-]
+```bash
+# Install directly with uv
+uv pip install -e .
 ```
 
 ## Usage
 
 ### Environment Setup
 
-Create a `.env` file with your OpenAI API key:
+Create a `.env` file in the project root with your OpenAI API key:
 
-```
+```bash
+# .env
 OPENAI_API_KEY=your_api_key_here
 ```
 
-### Voice App (Hold-to-Record)
+### Voice App (Main Application)
 
-The voice app allows you to record audio by holding down a keyboard shortcut:
-
-```bash
-# Run the voice app
-python -m voice
-```
-
-### Realtime Transcription (Toggle Mode)
-
-The realtime transcription app uses toggle mode (press once to start, press again to stop):
+The main voice app with full keyboard shortcut support:
 
 ```bash
-# Run the realtime transcription app
-python -m realtime
+# Basic usage
+python voice_app.py
+
+# Show all options
+python voice_app.py --help
+
+# Custom shortcuts and timing
+python voice_app.py \
+  --shortcut "cmd+shift+." \
+  --cancel-shortcut "ctrl+shift+w" \
+  --exit-shortcut "ctrl+shift+q" \
+  --min-recording-duration 1.5 \
+  --cooldown-period 0.8
 ```
 
-### Command Line Options
+### Keyboard Shortcuts
 
-Both apps support various command line options:
+- **Recording**: `cmd+shift+.` (default) - Start/stop recording
+- **Cancel**: `ctrl+shift+w` (default) - Cancel current recording without processing
+- **Exit**: `ctrl+shift+q` (default) - Exit the application
+
+### Timing Controls
+
+- **Minimum recording duration**: Prevents accidental quick recordings (default: 1.0s)
+- **Cooldown period**: Prevents rapid toggling between recordings (default: 0.5s)
+
+### Realtime Transcription
+
+For real-time transcription using OpenAI's Realtime API:
 
 ```bash
-# Voice App with custom shortcut
-python -m voice --shortcut="alt+shift+v"
+# Basic realtime transcription
+python realtime_transcription.py
 
-# Realtime Transcription with debug logging
-python -m realtime --debug
+# With keystroke simulation
+python realtime_transcription.py --keystroke
 
-# Disable keystroke simulation
-python -m realtime --no-keystroke
-
-# Use hold mode instead of toggle
-python -m realtime --hold-mode
+# With debug logging
+python realtime_transcription.py --debug
 ```
+
+## Configuration Options
+
+All configuration is handled through command-line arguments (no separate config files):
+
+```bash
+python voice_app.py \
+  --model gpt-4o-mini-transcribe \
+  --language en \
+  --with-clipboard \
+  --min-recording-duration 2.0 \
+  --cooldown-period 1.0 \
+  --hold-mode
+```
+
+## Dependencies
+
+All dependencies are managed through `pyproject.toml`:
+- Core: `openai`, `python-dotenv`, `sounddevice`, `numpy`
+- Audio: `soundfile`, `pydub` 
+- Interface: `pynput`, `pyperclip`, `colorama`
+- Networking: `websocket-client`
+
+No separate `requirements.txt` files are needed.
 
 ## Development
 
-### Testing
-
-Run tests using pytest:
-
 ```bash
+# Install with development dependencies
+uv pip install -e '.[dev]'
+
+# Run tests
 pytest
+
+# Run component test
+python -c "from input_handler import KeyboardShortcutHandler; h = KeyboardShortcutHandler(); print('✅ All imports successful')"
 ```
 
-### Building
+## Project Structure
 
-Build the package using hatch:
-
-```bash
-hatch build
+```
+voice-transcription-module/
+├── voice_app.py              # Main voice application
+├── realtime_transcription.py # Realtime transcription app
+├── input_handler.py          # Keyboard input handling
+├── audio_recorder.py         # Audio recording functionality
+├── audio_processor.py        # Audio processing utilities
+├── transcription_service.py  # OpenAI transcription service
+├── utils.py                  # Utility functions
+├── keyboard_controller.py    # Keyboard controller
+├── pyproject.toml           # Project configuration
+├── README.md                # This file
+└── .env                     # Environment variables (create this)
 ```
 
 ## License
