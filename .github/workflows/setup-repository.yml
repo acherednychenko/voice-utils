@@ -1,0 +1,86 @@
+name: Setup Repository Protection
+
+on:
+  workflow_dispatch: # Manual trigger
+  push:
+    paths:
+      - '.github/workflows/setup-repository.yml'
+    branches:
+      - main
+
+jobs:
+  setup-protection:
+    runs-on: ubuntu-latest
+    if: github.repository_owner == github.actor || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      administration: write
+    
+    steps:
+      - name: Setup branch protection for main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.repos.updateBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+                required_status_checks: {
+                  strict: true,
+                  contexts: []
+                },
+                enforce_admins: false, // Allows repository owner to bypass all rules
+                required_pull_request_reviews: {
+                  required_approving_review_count: 1,
+                  dismiss_stale_reviews: true,
+                  require_code_owner_reviews: false,
+                  bypass_pull_request_allowances: {
+                    users: [],
+                    teams: [],
+                    apps: []
+                  }
+                },
+                restrictions: null, // No push restrictions - anyone with write access can create PRs
+                allow_force_pushes: false,
+                allow_deletions: false,
+                required_linear_history: false,
+                allow_auto_merge: true,
+                required_conversation_resolution: true
+              });
+              
+              console.log('✅ Branch protection rules applied successfully to main branch');
+              console.log('📋 Rules applied:');
+              console.log('   - Require pull request reviews (1 approval required)');
+              console.log('   - Dismiss stale reviews when new commits are pushed');
+              console.log('   - Require conversation resolution before merging');
+              console.log('   - Block force pushes and deletions');
+              console.log('   - Admin bypass enabled (repository owner can override)');
+              console.log('   - Auto-merge allowed');
+              
+            } catch (error) {
+              console.error('❌ Failed to apply branch protection rules:', error.message);
+              core.setFailed(`Failed to setup branch protection: ${error.message}`);
+            }
+
+      - name: Display current protection status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const protection = await github.rest.repos.getBranchProtection({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main'
+              });
+              
+              console.log('🔒 Current branch protection status for main:');
+              console.log(`   - Enforce admins: ${protection.data.enforce_admins.enabled}`);
+              console.log(`   - Required PR reviews: ${protection.data.required_pull_request_reviews.required_approving_review_count}`);
+              console.log(`   - Dismiss stale reviews: ${protection.data.required_pull_request_reviews.dismiss_stale_reviews}`);
+              console.log(`   - Allow force pushes: ${protection.data.allow_force_pushes.enabled}`);
+              console.log(`   - Allow deletions: ${protection.data.allow_deletions.enabled}`);
+              
+            } catch (error) {
+              console.log('ℹ️  No existing branch protection found or error reading protection rules');
+            } 
