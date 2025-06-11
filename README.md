@@ -39,6 +39,29 @@ uv pip install -e .
 uv pip install -e .
 ```
 
+## macOS Permissions Setup
+
+This app has been tested on macOS and requires specific permissions to function properly. You need to grant the following permissions to your terminal application (Terminal.app) or code editor (e.g., Cursor) in **System Preferences > Privacy & Security**:
+
+### Required Permissions:
+
+1. **Input Monitoring** - Required for keyboard shortcut detection
+2. **Microphone** - Required for audio recording
+3. **Accessibility** - Required for keystroke simulation (typing transcribed text)
+
+### How to Enable:
+
+1. Open **System Preferences** (or **System Settings** on macOS 13+)
+2. Navigate to **Privacy & Security**
+3. Add your terminal application or code editor to each of the required permission categories:
+   - **Input Monitoring**: Add Terminal.app or Cursor
+   - **Microphone**: Add Terminal.app or Cursor  
+   - **Accessibility**: Add Terminal.app or Cursor
+
+**Note**: If running from Cursor, you need to grant these permissions to Cursor specifically. If running from Terminal, grant them to Terminal.app.
+
+You may need to restart your terminal/editor after granting permissions for them to take effect.
+
 ## Usage
 
 ### Environment Setup
