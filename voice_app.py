@@ -291,10 +291,13 @@ class VoiceTranscriptionApp:
         """Simulate keystrokes to type the transcribed text"""
         if not self.args.simulate_typing or not self.keyboard_typer:
             return
-
-        for char in text:
-            self.keyboard_typer.type(char)
-            time.sleep(0.001)  # Small delay between characters
+        # self.logger.debug(f"Typing text: {text}")
+        words = text.split()
+        for i, word in enumerate(words):
+            self.keyboard_typer.type(word)
+            if i < len(words) - 1:  # Add space between words, but not after the last word
+                self.keyboard_typer.type(' ')
+            time.sleep(0.005)  # Small delay between words
 
     def _process_token(self, token):
         """Process a token from the transcription stream"""
